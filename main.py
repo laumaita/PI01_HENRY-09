@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.neighbors import NearestNeighbors
 
 
 app = FastAPI()
@@ -15,6 +19,16 @@ def startup():
     url2 = 'https://drive.google.com/file/d/1dvoWrjxph3FKBETsbOI_-Vi0wqix_BMr/view?usp=share_link'
     path2 = 'https://drive.google.com/uc?export=download&id='+url2.split('/')[-2]
     df_score= pd.read_csv(path2)
+
+    global df_peliculas
+    url3 = 'https://drive.google.com/file/d/1dJeukGQytXkEhhT40EFK_ZxennhbmzsD/view?usp=share_link'
+    path3 = 'https://drive.google.com/uc?export=download&id='+url3.split('/')[-2]
+    df_peliculas= pd.read_csv(path3)
+
+    global df_filt_peliculas
+    url4 = 'https://drive.google.com/file/d/1WPpmgkAAQZrEGIdHOJ1IiDYmnOXj-2aW/view?usp=share_link'
+    path4 = 'https://drive.google.com/uc?export=download&id='+url4.split('/')[-2]
+    df_filt_peliculas= pd.read_csv(path4)    
 
 
 @app.get("/")
@@ -174,6 +188,40 @@ def get_contents(rating:str):
         return {'ingresar una de las sigientes categorias ' : '''pg-13', 'tv-ma', 'pg', 'tv-14', 'tv-pg', 'tv-y', 'tv-y7', 'r','tv-g', 'g', 'nc-17', 'nr','tv-y7-fv', 'ur', 'not rated','13+', 'all', '18+','16+', '7+', 'tv-nr', 'unrated', '16','ages_16_', 'ages_18_', 'all_ages', 'not_rate'''}
     else:
         return {'rating': str(rating), 'contenido' : int(total_contenido)}
-    
 
+@app.get('/get_recomendation/{title}')   
+def get_recommendation(titulo: str):
+
+    if df_peliculas.title[df_peliculas.title==titulo].empty:
+        return 'pelicula no encontrada' 
+    else: 
+        # Creo pipeline para variables numericas
+        pipeline_num = Pipeline([
+            ('scaler', StandardScaler())
+            ])
+        # Creo pipeline para variables categoricas
+        pipeline_categorica = Pipeline([
+            ('encoder', OneHotEncoder(drop = 'first'))
+            ])
+        # creo col_transf
+        col_transf = ColumnTransformer([
+            ('numeric', pipeline_num, df_filt_peliculas._get_numeric_data().columns.tolist()),
+            ('categoric', pipeline_categorica, df_filt_peliculas.select_dtypes('object').columns.tolist()) 
+            ])
+        #entrenamos
+        col_transf_fit = col_transf.fit(df_filt_peliculas)
+        df_filt_transf = col_transf_fit.transform(df_filt_peliculas)    
+        #knn vecinos
+        n_neighbors=6
+        nneighbors = NearestNeighbors(n_neighbors = n_neighbors, metric = 'cosine').fit(df_filt_transf)
+        
+
+        indice=df_peliculas[df_peliculas.title==titulo].index.values[0]#
+        dif, ind = nneighbors.kneighbors(df_filt_transf[indice])
+
+        df_peliculas.loc[ind[0][0], :]
+
+        recomendado=df_peliculas.loc[ind[0][1:], :].sort_values('score', ascending=False)
+        lista = recomendado.title.to_list()
+        return {'recomendacion': lista}
 
