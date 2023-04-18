@@ -169,7 +169,7 @@ def prod_per_county(tipo:str,pais:str,anio:int):
     else:
         return 'ingresar parametro : peliculas o series'
 
-    filtro=df_plataformagral[(df_plataformagral.type=='movie') 
+    filtro=df_plataformagral[(df_plataformagral.type==variable_tipo) 
                                     & (df_plataformagral.release_year==anio)
                                     & (df_plataformagral.country.notnull())
                                     & (df_plataformagral.country.str.contains(pais))]
