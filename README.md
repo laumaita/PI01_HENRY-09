@@ -34,3 +34,5 @@ En esta propuesta se realizaron 6 endpoints, para consultar:
 
 **`Sistema de recomendación`**: [ML](https://github.com/laumaita/PI01_HENRY-09/blob/main/ML_sistema_recomendacion.ipynb) 
 
+**`video`**: [Presentacion del proyecto]()
+
