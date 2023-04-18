@@ -176,7 +176,7 @@ def prod_per_county(tipo:str,pais:str,anio:int):
 
     respuesta= filtro.type.count()
 
-    return {'pais': str(pais), 'anio': int(anio), 'variable_tipo': int(respuesta)}
+    return {'pais': str(pais), 'anio': int(anio), variable_tipo: int(respuesta)}
 
 @app.get('/get_contents/{rating}')
 def get_contents(rating:str):
